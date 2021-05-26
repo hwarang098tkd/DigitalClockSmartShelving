@@ -53,8 +53,8 @@ DateTime MyDateAndTime;
 #define LEDDOWNLIGHT_COUNT 12
 
   //(red * 65536) + (green * 256) + blue ->for 32-bit merged colour value so 16777215 equals white
-uint32_t  clockMinuteColour = 140000000; //6553664000;//1677
-uint32_t  clockHourColour   = 140000000; //6553664000; //7712
+uint32_t  clockMinuteColour = 140000000; //6553664000;
+uint32_t  clockHourColour   = 140000000; //6553664000;
 //blue=255
 //green=1671168
 //red=16711680
