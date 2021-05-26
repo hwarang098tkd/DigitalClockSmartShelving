@@ -53,9 +53,20 @@ DateTime MyDateAndTime;
 #define LEDDOWNLIGHT_COUNT 12
 
   //(red * 65536) + (green * 256) + blue ->for 32-bit merged colour value so 16777215 equals white
-int clockMinuteColour = 51200; //1677
-int clockHourColour = 140000000; //7712
+uint32_t  clockMinuteColour = 140000000; //6553664000;//1677
+uint32_t  clockHourColour   = 140000000; //6553664000; //7712
+//blue=255
+//green=1671168
+//red=16711680
+//yellow=16776960
+//yellow-orange=65280
+//scam-white=16777215
+//purple=16711935
 
+//light green=100200
+//int clockMinuteColour_array[8]={1,120200,3,4,5,6,7,8};
+uint32_t  clockMinuteColour_array[8]={1671168,255,65280,15731300,16776960,16777215,31500,65535};
+uint32_t  clockHourColour_array[8]=  {1671168,255,65280,15731300,16776960,16777215,31500,65535};
 int clockFaceBrightness = 0;
 
 // Declare our NeoPixel objects:
@@ -78,46 +89,90 @@ int readings[numReadings];      // the readings from the analog input
 int readIndex = 0;              // the index of the current reading
 long total = 0;                  // the running total
 long average = 0;                // the average
-
+bool iscrazy=false;
+const int buzzer = 3;//buzzer pin number to beep when button pressed
+const int buttonPin_M = 9;
+const int buttonPin_H = 8;
+int array_pos_M=0;//var to set position of array when button pressed
+int array_pos_H=0;//var to set position of array when button pressed
+int buttonState_M = 0;
+int buttonState_H = 0;
+uint32_t debug_int=0;
 
 
 void setup() {
-
   Serial.begin(9600);
+  pinMode(buzzer, OUTPUT); // Set buzzer - pin 3 as an output
+  pinMode(buttonPin_M,INPUT);
+  pinMode(buttonPin_H,INPUT);  
   Clock.begin();
-
   stripClock.begin();           // INITIALIZE NeoPixel stripClock object (REQUIRED)
   stripClock.show();            // Turn OFF all pixels ASAP
   stripClock.setBrightness(100); // Set inital BRIGHTNESS (max = 255)
- 
-
   stripDownlighter.begin();           // INITIALIZE NeoPixel stripClock object (REQUIRED)
   stripDownlighter.show();            // Turn OFF all pixels ASAP
-  stripDownlighter.setBrightness(50); // Set BRIGHTNESS (max = 255)
+  stripDownlighter.setBrightness(200); // Set BRIGHTNESS (max = 255)
 
   //smoothing
     // initialize all the readings to 0:
   for (int thisReading = 0; thisReading < numReadings; thisReading++) {
     readings[thisReading] = 0;
-  }
-  
+  }  
 }
 
-void loop() {
+void loop() { 
+  //read the buttons  
   
+//  Serial.print("Array OUT: ");
+//  Serial.print(clockMinuteColour_array[0]);
+//  Serial.print(", clockMinuteColour: ");
+//  Serial.print(clockMinuteColour);
+//  Serial.print(", clockHourColour: ");
+//  Serial.println(clockHourColour);
+//  if ( array_pos_M <= 6){
+//      array_pos_M=array_pos_M+1;
+//      clockMinuteColour = clockMinuteColour_array[array_pos_M];
+//    }
+//    else{
+//      array_pos_M=0;
+//       clockMinuteColour = clockMinuteColour_array[array_pos_M];
+//    }  
+//change color by time
+
+  
+
+  //if 2 button are pressed simu
+  if ( digitalRead(buttonPin_H)==HIGH && digitalRead(buttonPin_M)==HIGH){
+    Serial.println("2 buttons are presed at the same time");
+    if (iscrazy==false){
+      iscrazy=true;
+    }else{
+      iscrazy=false;
+      debug_int=0;
+    }
+  }
+  else{
+    clockMinuteColour =  read_Buttons_M();
+    clockHourColour   =  read_Buttons_H();
+  }
+  
+  if (iscrazy==true){
+    debug_int=debug_int+5000;
+    clockMinuteColour=debug_int;
+    clockHourColour=debug_int;
+    Serial.println(clockMinuteColour);
+    Serial.println("");
+  }
+    
   //read the time
   readTheTime();
 
   //display the time on the LEDs
   displayTheTime();
-
-
-
-
+  
   //Record a reading from the light sensor and add it to the array
   readings[readIndex] = analogRead(A0); //get an average light level from previouse set of samples
-  Serial.print("Light sensor value added to array = ");
-  Serial.println(readings[readIndex]);
+
   readIndex = readIndex + 1; // advance to the next position in the array:
 
   // if we're at the end of the array move the index back around...
@@ -131,76 +186,120 @@ void loop() {
   for (int i=0; i < numReadings; i++)
     {
         sumBrightness += readings[i];
-    }
-  Serial.print("Sum of the brightness array = ");
-  Serial.println(sumBrightness);
+    }  
+  
 
   // and calculate the average: 
   int lightSensorValue = sumBrightness / numReadings;
-  Serial.print("Average light sensor value = ");
-  Serial.println(lightSensorValue);
+  
 
 
   //set the brightness based on ambiant light levels
-  clockFaceBrightness = map(lightSensorValue,50, 1000, 200, 1); 
-  stripClock.setBrightness(clockFaceBrightness); // Set brightness value of the LEDs
-  Serial.print("Mapped brightness value = ");
-  Serial.println(clockFaceBrightness);
+  clockFaceBrightness = map(lightSensorValue,10, 210, 50, 255); 
   
+//    if (clockFaceBrightness<10){
+//    clockFaceBrightness=10;
+//  }
+  stripClock.setBrightness(clockFaceBrightness); // Set brightness value of the LEDs
+//  Serial.print("Light sensor value added to array = ");
+//  Serial.println(readings[readIndex]);
+//  Serial.print("Sum of the brightness array = ");
+//  Serial.println(sumBrightness);
+//  Serial.print("Average light sensor value = ");
+//  Serial.println(lightSensorValue);
+//  Serial.print("clockFaceBrightness = ");
+//  Serial.println(clockFaceBrightness);
+//  Serial.print("Mapped brightness value = ");
+//  Serial.println(clockFaceBrightness);  
   stripClock.show();
-
    //(red * 65536) + (green * 256) + blue ->for 32-bit merged colour value so 16777215 equals white
   stripDownlighter.fill(16777215, 0, LEDDOWNLIGHT_COUNT);
   stripDownlighter.show();
-
-  delay(5000);   //this 5 second delay to slow things down during testing
-
+  delay(500);   //
 }
 
+void buzzerbeeper(){
+  tone(buzzer, 500); // Send 1KHz sound signal...
+  delay(500);        // ...for 1 sec
+  noTone(buzzer);     // Stop sound...
+  Serial.println("Buzzer beep @@@ ");
+}
+
+//function to read min button
+int read_Buttons_M(){    
+  buttonState_M=digitalRead(buttonPin_M);  
+  if (buttonState_M == HIGH) {//read the button for Mins
+    buzzerbeeper();
+    if ( array_pos_M <= 6){
+      array_pos_M=array_pos_M+1;
+      clockMinuteColour = clockMinuteColour_array[array_pos_M];
+    }
+    else{
+      array_pos_M=0;
+       clockMinuteColour = clockMinuteColour_array[array_pos_M];
+    }      
+    Serial.print("Button for MIN PRESSED !!!"); 
+    Serial.print(" , Array Posit: ");
+    Serial.print(array_pos_M);
+    Serial.print(" , Array Value-Color: ");
+    Serial.println(clockMinuteColour_array[array_pos_M]);
+    return clockMinuteColour;
+  } 
+}
+
+//function to read hour button
+int read_Buttons_H(){  
+  buttonState_H=digitalRead(buttonPin_H); 
+  if (buttonState_H == HIGH) {//read the button for Hours
+    buzzerbeeper(); 
+    if ( array_pos_H <= 6){
+      array_pos_H=array_pos_H+1;
+      clockHourColour = clockHourColour_array[array_pos_H];
+    }
+    else{
+      array_pos_H=0;
+      clockHourColour = clockHourColour_array[array_pos_H];
+    }       
+    Serial.print("Button for Hour PRESSED !!!"); 
+    Serial.print(" , Array Posit: ");
+    Serial.print(array_pos_H);
+    Serial.print(" , Array Value-Color: ");
+    Serial.println(clockMinuteColour_array[array_pos_H]);  
+    return clockHourColour;
+  } 
+}
 
 void readTheTime(){
   // Ask the clock for the data.
   MyDateAndTime = Clock.read();
   
   // And use it
-  Serial.println("");
-  Serial.print("Time is: ");   Serial.print(MyDateAndTime.Hour);
-  Serial.print(":"); Serial.print(MyDateAndTime.Minute);
-  Serial.print(":"); Serial.println(MyDateAndTime.Second);
-  Serial.print("Date is: 20");   Serial.print(MyDateAndTime.Year);
-  Serial.print(":");  Serial.print(MyDateAndTime.Month);
-  Serial.print(":");    Serial.println(MyDateAndTime.Day);
+//  Serial.println("");
+//  Serial.print("Time is: ");   Serial.print(MyDateAndTime.Hour);
+//  Serial.print(":"); Serial.print(MyDateAndTime.Minute);
+//  Serial.print(":"); Serial.println(MyDateAndTime.Second);
+//  Serial.print("Date is: 20");   Serial.print(MyDateAndTime.Year);
+//  Serial.print(":");  Serial.print(MyDateAndTime.Month);
+//  Serial.print(":");    Serial.println(MyDateAndTime.Day);
 }
 
 void displayTheTime(){
-
-  stripClock.clear(); //clear the clock face 
-
-  
+  stripClock.clear(); //clear the clock face   
   int firstMinuteDigit = MyDateAndTime.Minute % 10; //work out the value of the first digit and then display it
-  displayNumber(firstMinuteDigit, 0, clockMinuteColour);
-
-  
+  displayNumber(firstMinuteDigit, 0, clockMinuteColour);  
   int secondMinuteDigit = floor(MyDateAndTime.Minute / 10); //work out the value for the second digit and then display it
   displayNumber(secondMinuteDigit, 63, clockMinuteColour);  
-
-
   int firstHourDigit = MyDateAndTime.Hour; //work out the value for the third digit and then display it
   if (firstHourDigit > 12){
     firstHourDigit = firstHourDigit - 12;
-  }
- 
+  } 
  // Comment out the following three lines if you want midnight to be shown as 12:00 instead of 0:00
 //  if (firstHourDigit == 0){
 //    firstHourDigit = 12;
-//  }
- 
+//  } 
   firstHourDigit = firstHourDigit % 10;
   displayNumber(firstHourDigit, 126, clockHourColour);
-
-
   int secondHourDigit = MyDateAndTime.Hour; //work out the value for the fourth digit and then display it
-
 // Comment out the following three lines if you want midnight to be shwon as 12:00 instead of 0:00
 //  if (secondHourDigit == 0){
 //    secondHourDigit = 12;
@@ -212,9 +311,7 @@ void displayTheTime(){
     if (secondHourDigit > 9){
       stripClock.fill(clockHourColour,189, 18); 
     }
-
   }
-
 
 void displayNumber(int digitToDisplay, int offsetBy, int colourToUse){
     switch (digitToDisplay){
